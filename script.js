@@ -1,89 +1,81 @@
-const apiURL = "https://api.aladhan.com/v1/timingsByCity?city=Karachi&country=Pakistan&method=2";
+const tableBody = document.querySelector("#ramadan-table tbody");
 const countdown = document.getElementById("countdown");
 const currentStatus = document.getElementById("current-status");
 const nextPrayer = document.getElementById("next-prayer");
-const tableBody = document.querySelector("#ramadan-table tbody");
 const modeToggle = document.getElementById("mode-toggle");
 
-let timings = [];
+let timings = {};
 
-// Dark / Light Mode
-modeToggle.addEventListener("click", () => {
+// Load JSON timings
+fetch("timings.json")
+.then(res => res.json())
+.then(data => {
+    timings = data;
+    populateTable();
+    startCountdown();
+})
+.catch(err => {
+    console.error(err);
+    currentStatus.textContent = "Error loading timings";
+});
+
+modeToggle.addEventListener("click", ()=>{
     document.body.classList.toggle("dark");
 });
 
-// Fetch Timings
-async function fetchTimings() {
-    try {
-        const res = await fetch(apiURL);
-        const data = await res.json();
-        const todayTimings = data.data.timings;
-        const monthTimings = data.data.meta;
-        
-        // Store today's Sehri & Iftar
-        timings = {
-            sehri: todayTimings.Fajr,
-            iftar: todayTimings.Maghrib
-        };
-
-        // Populate table (optional: just today for simplicity)
-        tableBody.innerHTML = "";
-        for (let i = 1; i <= 30; i++) {
-            tableBody.innerHTML += `<tr>
-                <td>${i}</td>
-                <td>${timings.sehri}</td>
-                <td>${timings.iftar}</td>
-            </tr>`;
-        }
-
-        startCountdown();
-    } catch (err) {
-        console.error(err);
-        currentStatus.textContent = "Error fetching timings";
+function populateTable() {
+    tableBody.innerHTML = "";
+    for(let i=1;i<=30;i++){
+        const day = i.toString();
+        tableBody.innerHTML += `<tr>
+            <td>${day}</td>
+            <td>${timings[day].sehri}</td>
+            <td>${timings[day].iftar}</td>
+        </tr>`;
     }
 }
 
-// Countdown
-function startCountdown() {
-    setInterval(() => {
+function startCountdown(){
+    setInterval(()=>{
         const now = new Date();
-        const currentHour = now.getHours();
-        const currentMin = now.getMinutes();
-        const currentSec = now.getSeconds();
+        const today = now.getDate();
+        const todayTiming = timings[today.toString()];
+        if(!todayTiming) return;
+
+        const sehriParts = todayTiming.sehri.split(":").map(Number);
+        const iftarParts = todayTiming.iftar.split(":").map(Number);
 
         const sehriTime = new Date();
-        const [sehriH, sehriM] = timings.sehri.split(":").map(Number);
-        sehriTime.setHours(sehriH, sehriM, 0);
+        sehriTime.setHours(sehriParts[0], sehriParts[1], 0, 0);
 
         const iftarTime = new Date();
-        const [iftarH, iftarM] = timings.iftar.split(":").map(Number);
-        iftarTime.setHours(iftarH, iftarM, 0);
+        iftarTime.setHours(iftarParts[0], iftarParts[1], 0, 0);
 
-        let targetTime;
-        let statusText;
-
-        if (now < sehriTime) {
+        let targetTime, status;
+        if(now < sehriTime){
             targetTime = sehriTime;
-            statusText = "Sehri in";
-        } else if (now < iftarTime) {
+            status = "Sehri in";
+        } else if(now < iftarTime){
             targetTime = iftarTime;
-            statusText = "Iftar in";
+            status = "Iftar in";
         } else {
             // Next day
-            targetTime = new Date(sehriTime.getTime() + 24*60*60*1000);
-            statusText = "Sehri in";
+            const nextDay = today+1;
+            const nextTiming = timings[nextDay.toString()] || timings["1"];
+            const nextSehriParts = nextTiming.sehri.split(":").map(Number);
+            targetTime = new Date();
+            targetTime.setDate(now.getDate()+1);
+            targetTime.setHours(nextSehriParts[0], nextSehriParts[1],0,0);
+            status = "Sehri in";
         }
 
         const diff = targetTime - now;
-        const hours = Math.floor(diff / 1000 / 60 / 60);
-        const minutes = Math.floor((diff / 1000 / 60) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
+        const hours = Math.floor(diff/1000/60/60);
+        const minutes = Math.floor((diff/1000/60)%60);
+        const seconds = Math.floor((diff/1000)%60);
 
         countdown.textContent = `${hours.toString().padStart(2,"0")}:${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2,"0")}`;
-        currentStatus.textContent = statusText;
-        nextPrayer.textContent = `Next: ${targetTime.toLocaleTimeString()}`;
-    }, 1000);
-}
-
-// Init
-fetchTimings();
+        currentStatus.textContent = status;
+        nextPrayer.textContent = `Next: ${targetTime.toLocaleTimeString('en-PK',{hour12:false})}`;
+    },1000);
+                                          }
