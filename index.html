@@ -3,20 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ramadan Sehri & Iftar Timer - Karachi</title>
+<title>Karachi Ramadan Timer 2026</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="background">
+    <img src="assets/moon.png" class="moon">
+    <img src="assets/stars.png" class="stars">
+    <img src="assets/lantern.png" class="lantern">
+</div>
 <div class="container">
-    <h1>🌙 Ramadan Sehri & Iftar Timer - Karachi</h1>
+    <h1>🌙 Ramadan Sehri & Iftar - Karachi</h1>
     <div class="timer-box">
         <p id="current-status">Loading...</p>
         <h2 id="countdown">00:00:00</h2>
         <p id="next-prayer">Next: --</p>
     </div>
-    <div class="toggle">
-        <button id="mode-toggle">🌙 Dark / Light Mode</button>
-    </div>
+    <button id="mode-toggle">🌙 Dark / Light Mode</button>
     <div class="table-container">
         <table id="ramadan-table">
             <thead>
@@ -26,8 +29,7 @@
                     <th>Iftar</th>
                 </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
